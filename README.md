@@ -22,7 +22,7 @@ Data Structures Used
 
 Project Structure
 -----------------
-The project strictly follows an 8-file structure:
+The project files:
 
 C_BTree_Exchange/
   main.c           : CLI menu, user input handling, and program loop
@@ -33,16 +33,22 @@ C_BTree_Exchange/
   data_gen.c       : Synthetic order generator for test feeds
   orders_feed.txt  : Input feed of orders (OrderID, Type, Price, Quantity, TTL)
   trades.log       : Output log file recording executed trades
+  setup.bat        : One-click setup and launcher script for Windows
 
 Compilation and Execution
 -------------------------
+Windows (Quick One-Click):
+  Double-click setup.bat.
+  - If GCC is installed, it compiles the code and opens the program.
+  - If GCC is not installed on that PC, it runs the pre-compiled exchange.exe directly.
+
+Windows (Manual Compilation with MinGW):
+  gcc -std=c11 -Wall -Wextra -pedantic -O2 main.c structures.c engine.c data_gen.c -o exchange.exe
+  .\exchange.exe
+
 Linux or WSL (Ubuntu):
   gcc -std=c11 -Wall -Wextra -pedantic -O2 main.c structures.c engine.c data_gen.c -o exchange
   ./exchange
-
-Windows (Command Prompt or PowerShell with MinGW):
-  gcc -std=c11 -Wall -Wextra -pedantic -O2 main.c structures.c engine.c data_gen.c -o exchange.exe
-  .\exchange.exe
 
 Automated Tests
 ---------------
