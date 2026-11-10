@@ -1,0 +1,12 @@
+# Compiled binaries and object files
+*.exe
+exchange
+*.o
+*.obj
+
+# Portable compiler directory if downloaded by setup.bat
+compiler/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
