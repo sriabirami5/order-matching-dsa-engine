@@ -9,47 +9,59 @@ echo.
 
 :: Change directory to current script folder
 cd /d "%~dp0"
+if exist "%~dp0C_BTree_Exchange\main.c" (
+    cd /d "%~dp0C_BTree_Exchange"
+)
 
-:: Step 1: Check if gcc is already available
+:: Step 1: Check if gcc is in system PATH
 where gcc >nul 2>nul
 if %errorlevel% equ 0 (
-    echo [INFO] GCC is already installed on this machine.
+    echo [INFO] GCC is already installed in system PATH.
     goto COMPILE
 )
 
-echo [WARN] GCC compiler not detected in system PATH.
-echo [INFO] Setting up lightweight portable C compiler...
+:: Step 2: Check common installed MinGW/MSYS2 directories on this PC
+echo [INFO] Searching for existing MinGW / MSYS2 installations...
+
+for %%P in (
+    "D:\tools\msys64\ucrt64\bin"
+    "C:\tools\msys64\ucrt64\bin"
+    "C:\msys64\ucrt64\bin"
+    "C:\msys64\mingw64\bin"
+    "C:\MinGW\bin"
+    "C:\Program Files\CodeBlocks\MinGW\bin"
+    "C:\TDM-GCC-64\bin"
+) do (
+    if exist "%%~P\gcc.exe" (
+        echo [INFO] Found GCC at: %%~P
+        set "PATH=%%~P;!PATH!"
+        goto COMPILE
+    )
+)
+
+:: Step 3: If not found anywhere, offer automatic installation via winget
+echo [WARN] GCC compiler not found on this PC.
 echo.
 
-set "COMPILER_DIR=%~dp0compiler"
-set "COMPILER_ZIP=%TEMP%\w64devkit.zip"
-
-if exist "%COMPILER_DIR%\bin\gcc.exe" (
-    echo [INFO] Existing portable compiler found in %COMPILER_DIR%.
-    goto ADD_PATH
+where winget >nul 2>nul
+if %errorlevel% equ 0 (
+    echo [INFO] Windows Package Manager (winget) is available.
+    echo [INFO] Installing MSYS2 GCC automatically...
+    winget install -e --id MSYS2.MSYS2 --accept-source-agreements --accept-package-agreements
+    if exist "C:\msys64\ucrt64\bin\gcc.exe" (
+        set "PATH=C:\msys64\ucrt64\bin;!PATH!"
+        goto COMPILE
+    )
 )
 
-echo [INFO] Downloading portable MinGW compiler (w64devkit)...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object System.Net.WebClient).DownloadFile('https://github.com/skeeto/w64devkit/releases/download/v1.20.0/w64devkit-1.20.0.zip', '%COMPILER_ZIP%')"
-
-if not exist "%COMPILER_ZIP%" (
-    echo [ERROR] Failed to download portable compiler.
-    echo Please make sure this PC is connected to the internet.
-    pause
-    exit /b 1
-)
-
-echo [INFO] Extracting compiler...
-tar -xf "%COMPILER_ZIP%" -C "%TEMP%"
-if exist "%TEMP%\w64devkit" (
-    if not exist "%COMPILER_DIR%" mkdir "%COMPILER_DIR%"
-    xcopy /E /I /Q /Y "%TEMP%\w64devkit\*" "%COMPILER_DIR%\" >nul
-    rmdir /S /Q "%TEMP%\w64devkit" >nul 2>nul
-)
-del "%COMPILER_ZIP%" >nul 2>nul
-
-:ADD_PATH
-set "PATH=%COMPILER_DIR%\bin;%PATH%"
+echo.
+echo [ERROR] No C compiler found.
+echo Please install MinGW or MSYS2 on this PC to compile:
+echo   Option 1: Run 'winget install MSYS2.MSYS2'
+echo   Option 2: Install Code::Blocks or MinGW
+echo   Option 3: Or run under WSL by typing 'wsl'
+pause
+exit /b 1
 
 :COMPILE
 echo.
