@@ -1,5 +1,5 @@
 @echo off
-setlocal enabledelayedexpansion
+setlocal
 title C-BTree Exchange Setup and Runner
 
 echo ====================================================
@@ -7,64 +7,71 @@ echo       C-BTree Exchange - Windows Setup
 echo ====================================================
 echo.
 
-:: Change directory to current script folder
 cd /d "%~dp0"
-if exist "%~dp0C_BTree_Exchange\main.c" (
-    cd /d "%~dp0C_BTree_Exchange"
-)
+if exist "%~dp0C_BTree_Exchange\main.c" cd /d "%~dp0C_BTree_Exchange"
 
-:: Step 1: Check if gcc is in system PATH
+REM Check 1: Check if gcc is already in PATH
 where gcc >nul 2>nul
-if %errorlevel% equ 0 (
-    echo [INFO] GCC is already installed in system PATH.
-    goto COMPILE
+if %errorlevel% equ 0 goto FOUND_GCC_PATH
+
+REM Check 2: Check common MinGW or MSYS2 installation folders
+if exist "D:\tools\msys64\ucrt64\bin\gcc.exe" (
+    set "PATH=D:\tools\msys64\ucrt64\bin;%PATH%"
+    goto FOUND_GCC_DIR
+)
+if exist "C:\tools\msys64\ucrt64\bin\gcc.exe" (
+    set "PATH=C:\tools\msys64\ucrt64\bin;%PATH%"
+    goto FOUND_GCC_DIR
+)
+if exist "C:\msys64\ucrt64\bin\gcc.exe" (
+    set "PATH=C:\msys64\ucrt64\bin;%PATH%"
+    goto FOUND_GCC_DIR
+)
+if exist "C:\msys64\mingw64\bin\gcc.exe" (
+    set "PATH=C:\msys64\mingw64\bin;%PATH%"
+    goto FOUND_GCC_DIR
+)
+if exist "C:\MinGW\bin\gcc.exe" (
+    set "PATH=C:\MinGW\bin;%PATH%"
+    goto FOUND_GCC_DIR
+)
+if exist "C:\Program Files\CodeBlocks\MinGW\bin\gcc.exe" (
+    set "PATH=C:\Program Files\CodeBlocks\MinGW\bin;%PATH%"
+    goto FOUND_GCC_DIR
+)
+if exist "C:\TDM-GCC-64\bin\gcc.exe" (
+    set "PATH=C:\TDM-GCC-64\bin;%PATH%"
+    goto FOUND_GCC_DIR
 )
 
-:: Step 2: Check common installed MinGW/MSYS2 directories on this PC
-echo [INFO] Searching for existing MinGW / MSYS2 installations...
-
-for %%P in (
-    "D:\tools\msys64\ucrt64\bin"
-    "C:\tools\msys64\ucrt64\bin"
-    "C:\msys64\ucrt64\bin"
-    "C:\msys64\mingw64\bin"
-    "C:\MinGW\bin"
-    "C:\Program Files\CodeBlocks\MinGW\bin"
-    "C:\TDM-GCC-64\bin"
-) do (
-    if exist "%%~P\gcc.exe" (
-        echo [INFO] Found GCC at: %%~P
-        set "PATH=%%~P;!PATH!"
-        goto COMPILE
-    )
+REM Check 3: If no GCC, check if exchange.exe already exists
+if exist "exchange.exe" (
+    echo [WARN] GCC compiler was not found on this PC.
+    echo [INFO] Pre-compiled exchange.exe detected. Launching directly...
+    echo.
+    goto RUN_EXCHANGE
 )
 
-:: Step 3: If not found anywhere, offer automatic installation via winget
-echo [WARN] GCC compiler not found on this PC.
+REM Check 4: If no compiler and no exchange.exe, report clearly
+echo [ERROR] No C compiler was found on this PC.
 echo.
-
-where winget >nul 2>nul
-if %errorlevel% equ 0 (
-    echo [INFO] Windows Package Manager (winget) is available.
-    echo [INFO] Installing MSYS2 GCC automatically...
-    winget install -e --id MSYS2.MSYS2 --accept-source-agreements --accept-package-agreements
-    if exist "C:\msys64\ucrt64\bin\gcc.exe" (
-        set "PATH=C:\msys64\ucrt64\bin;!PATH!"
-        goto COMPILE
-    )
-)
-
+echo To run this project on a PC without GCC:
+echo   1. Copy the compiled exchange.exe into this folder, OR
+echo   2. Install MinGW, MSYS2, or CodeBlocks, OR
+echo   3. Run under WSL by typing: wsl
 echo.
-echo [ERROR] No C compiler found.
-echo Please install MinGW or MSYS2 on this PC to compile:
-echo   Option 1: Run 'winget install MSYS2.MSYS2'
-echo   Option 2: Install Code::Blocks or MinGW
-echo   Option 3: Or run under WSL by typing 'wsl'
 pause
 exit /b 1
 
+:FOUND_GCC_PATH
+echo [INFO] Found GCC compiler in system PATH.
+goto COMPILE
+
+:FOUND_GCC_DIR
+echo [INFO] Found installed GCC compiler on this machine.
+goto COMPILE
+
 :COMPILE
-echo.
 echo [INFO] Compiling C-BTree Exchange...
 gcc -std=c11 -Wall -Wextra -pedantic -O2 main.c structures.c engine.c data_gen.c -o exchange.exe
 
@@ -77,8 +84,10 @@ if %errorlevel% neq 0 (
 
 echo [INFO] Compilation successful!
 echo.
+
+:RUN_EXCHANGE
 echo ====================================================
-echo Launching C-BTree Exchange Engine...
+echo Starting C-BTree Exchange Engine...
 echo ====================================================
 echo.
 
